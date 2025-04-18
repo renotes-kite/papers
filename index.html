@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>NoteGPT - Personal Notes</title>
+  <title>NoteGPT - Personal Papers</title>
   <style>
     body {
       margin: 0;
@@ -124,16 +124,16 @@
 
   <!-- Sidebar -->
   <div id="sidebar">
-    <h2>Your Notes</h2>
+    <h2>Your Papers</h2>
     <ul id="notesList"></ul>
-    <button id="newNoteBtn">+ New Note</button>
+    <button id="newNoteBtn">+ New Paper</button>
   </div>
 
   <!-- Main Editor -->
   <div id="main">
-    <input type="text" id="noteTitle" placeholder="Enter Note Title" />
-    <textarea id="noteContent" placeholder="Start writing your note..."></textarea>
-    <button id="saveBtn">💾 Save Note</button>
+    <input type="text" id="noteTitle" placeholder="Enter Paper Title" />
+    <textarea id="noteContent" placeholder="Start writing your paper..."></textarea>
+    <button id="saveBtn">💾 Save Paper</button>
   </div>
 
   <script>
@@ -168,7 +168,7 @@
         del.className = 'delete-btn';
         del.onclick = (e) => {
           e.stopPropagation(); // prevent opening the note
-          if (confirm("Delete this note?")) {
+          if (confirm("Delete this paper?")) {
             delete notes[id];
             if (currentNoteId === id) {
               currentNoteId = null;
@@ -210,7 +210,7 @@
       const title = document.getElementById("noteTitle").value.trim();
       const content = document.getElementById("noteContent").value;
       if (!currentNoteId) {
-        alert("Please create a new note first.");
+        alert("Please create a new paper first.");
         return;
       }
 
