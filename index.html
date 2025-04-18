@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NoteGPT - Personal Notes</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: 250px;
+      background-color: #f4f4f4;
+      border-right: 1px solid #ddd;
+      padding: 10px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    #sidebar h2 {
+      font-size: 18px;
+      margin-top: 0;
+    }
+
+    #notesList {
+      list-style: none;
+      padding: 0;
+    }
+
+    .note-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      margin-bottom: 4px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .note-item:hover, .note-item.active {
+      background-color: #e0e0e0;
+    }
+
+    .note-title {
+      flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .delete-btn {
+      color: red;
+      font-weight: bold;
+      margin-left: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #newNoteBtn {
+      margin-top: 10px;
+      padding: 8px;
+      width: 100%;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    #newNoteBtn:hover {
+      background-color: #0056b3;
+    }
+
+    /* Main Area */
+    #main {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    #noteTitle {
+      font-size: 20px;
+      padding: 10px;
+      margin-bottom: 10px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    #noteContent {
+      flex-grow: 1;
+      padding: 10px;
+      width: 100%;
+      resize: none;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    #saveBtn {
+      margin-top: 10px;
+      padding: 10px;
+      width: 150px;
+      border: none;
+      background-color: green;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+      align-self: flex-end;
+    }
+
+    #saveBtn:hover {
+      background-color: darkgreen;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <h2>Your Notes</h2>
+    <ul id="notesList"></ul>
+    <button id="newNoteBtn">+ New Note</button>
+  </div>
+
+  <!-- Main Editor -->
+  <div id="main">
+    <input type="text" id="noteTitle" placeholder="Enter Note Title" />
+    <textarea id="noteContent" placeholder="Start writing your note..."></textarea>
+    <button id="saveBtn">💾 Save Note</button>
+  </div>
+
+  <script>
+    let notes = {};
+    let currentNoteId = null;
+
+    function loadNotes() {
+      const saved = localStorage.getItem("notesGPT");
+      notes = saved ? JSON.parse(saved) : {};
+      updateSidebar();
+    }
+
+    function saveToStorage() {
+      localStorage.setItem("notesGPT", JSON.stringify(notes));
+    }
+
+    function updateSidebar() {
+      const notesList = document.getElementById("notesList");
+      notesList.innerHTML = '';
+      for (let id in notes) {
+        const li = document.createElement("li");
+        li.className = 'note-item';
+        if (id === currentNoteId) li.classList.add("active");
+
+        const spanTitle = document.createElement("span");
+        spanTitle.textContent = notes[id].title || "(Untitled)";
+        spanTitle.className = 'note-title';
+        spanTitle.onclick = () => openNote(id);
+
+        const del = document.createElement("span");
+        del.textContent = "×";
+        del.className = 'delete-btn';
+        del.onclick = (e) => {
+          e.stopPropagation(); // prevent opening the note
+          if (confirm("Delete this note?")) {
+            delete notes[id];
+            if (currentNoteId === id) {
+              currentNoteId = null;
+              clearMainArea();
+            }
+            saveToStorage();
+            updateSidebar();
+          }
+        };
+
+        li.appendChild(spanTitle);
+        li.appendChild(del);
+        notesList.appendChild(li);
+      }
+    }
+
+    function openNote(id) {
+      const note = notes[id];
+      document.getElementById("noteTitle").value = note.title;
+      document.getElementById("noteContent").value = note.content;
+      currentNoteId = id;
+      updateSidebar();
+    }
+
+    function clearMainArea() {
+      document.getElementById("noteTitle").value = '';
+      document.getElementById("noteContent").value = '';
+    }
+
+    document.getElementById("newNoteBtn").onclick = () => {
+      const id = Date.now().toString();
+      notes[id] = { title: "", content: "" };
+      currentNoteId = id;
+      clearMainArea();
+      updateSidebar();
+    };
+
+    document.getElementById("saveBtn").onclick = async () => {
+      const title = document.getElementById("noteTitle").value.trim();
+      const content = document.getElementById("noteContent").value;
+      if (!currentNoteId) {
+        alert("Please create a new note first.");
+        return;
+      }
+
+      notes[currentNoteId] = { title, content };
+      saveToStorage();
+      updateSidebar();
+
+      try {
+        const handle = await window.showDirectoryPicker();
+        const fileHandle = await handle.getFileHandle(`${title || 'untitled'}.txt`, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(content);
+        await writable.close();
+        alert("Saved to your folder!");
+      } catch (err) {
+        console.warn("Save canceled or not supported:", err);
+      }
+    };
+
+    loadNotes();
+  </script>
+
+</body>
+</html>
